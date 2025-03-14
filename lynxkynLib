@@ -50,8 +50,33 @@ function library:createWindow(windowName)
     featurePanel.Size = UDim2.new(0, 181, 0, 260)
     featurePanel.Visible = true
 
+    local function animatePanel(panel, targetPosition, duration)
+        local startPosition = panel.Position
+        local startTime = tick()
+
+        local function update()
+            local elapsed = tick() - startTime
+            local progress = elapsed / duration
+            panel.Position = startPosition:Lerp(targetPosition, progress)
+
+            if progress < 1 then
+                task.wait()
+                update()
+            end
+        end
+
+        update()
+    end
+
     minimize.MouseButton1Click:Connect(function()
-        featurePanel.Visible = not featurePanel.Visible
+        if featurePanel.Visible then
+            animatePanel(featurePanel, UDim2.new(0, 0, 0, -260), 0.2)
+            task.wait(0.2)
+            featurePanel.Visible = false
+        else
+            featurePanel.Visible = true
+            animatePanel(featurePanel, UDim2.new(0, 0, 1, 0), 0.2)
+        end
     end)
 
     local dragging = false
@@ -84,12 +109,15 @@ function library:createWindow(windowName)
         end
     end)
 
-    function window:addButton(buttonName, callback)
+    local windowAPI = {}
+
+    function windowAPI:addButton(buttonName, callback)
         local button = Instance.new("TextButton")
         button.Name = buttonName
         button.Parent = featurePanel
         button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
         button.BorderSizePixel = 0
+        button.Position = UDim2.new(0.03, 0, 0.05, 0)
         button.Size = UDim2.new(0, 174, 0, 26)
         button.Font = Enum.Font.SourceSans
         button.Text = buttonName
@@ -99,11 +127,12 @@ function library:createWindow(windowName)
         button.MouseButton1Click:Connect(callback)
     end
 
-    function window:addLabel(labelName)
+    function windowAPI:addLabel(labelName)
         local label = Instance.new("TextLabel")
         label.Name = labelName
         label.Parent = featurePanel
         label.BackgroundTransparency = 1
+        label.Position = UDim2.new(0.03, 0, 0.15, 0)
         label.Size = UDim2.new(0, 174, 0, 26)
         label.Font = Enum.Font.SourceSans
         label.Text = labelName
@@ -111,7 +140,7 @@ function library:createWindow(windowName)
         label.TextSize = 14
     end
 
-    function window:addCheckbox(checkboxName, callback)
+    function windowAPI:addCheckbox(checkboxName, callback)
         local checkbox = Instance.new("ImageButton")
         checkbox.Name = checkboxName
         checkbox.Parent = featurePanel
@@ -133,13 +162,13 @@ function library:createWindow(windowName)
         end)
     end
 
-    return window
+    return windowAPI
 end
 
 local blurEffect = Instance.new("BlurEffect")
 blurEffect.Size = 24
 blurEffect.Parent = game:GetService("Lighting")
-blurEffect.Enabled = false
+blurEffect.Enabled = true
 
 game:GetService("UserInputService").InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.Insert then
